@@ -440,8 +440,9 @@ function allSectionsCompletedOnce(name) {
   return Object.values(getSectionAttempts(name)).every(n => n >= 1);
 }
 
-/* Two tries per activity. The activities are spread over several days, so a
-   second try never waits on the other activities. */
+/* No try limit (Marcos 10/16: "remove the 2 tries limit") — this is a site for
+   learning, so any activity can be done again as many times as a student wants.
+   Every try is still its own row (Attempt 1, 2, 3 …), so nothing is overwritten. */
 function applyLocks(name) {
   const attempts = getSectionAttempts(name);
   Object.values(ACTIVITIES).forEach(act => {
@@ -449,9 +450,8 @@ function applyLocks(name) {
     if (!btn) return;
     const done = attempts[act.key];
     const sub  = btn.querySelector('.form-btn-sub');
-    if (done === 0)      { btn.classList.remove('locked'); sub.textContent = act.sub; }
-    else if (done === 1) { btn.classList.remove('locked'); sub.textContent = '✅ Done once · 1 more try'; }
-    else                 { btn.classList.add('locked');    sub.textContent = '🔒 2 of 2 tries used · ask Mr. O'; }
+    btn.classList.remove('locked');
+    sub.textContent = done === 0 ? act.sub : `✅ Done ${done === 1 ? 'once' : done + ' times'} · do it again anytime`;
   });
 }
 
@@ -865,19 +865,7 @@ const app = {
   /* ── ATTEMPT START ── */
   attemptStart(section) {
     if (!this.studentName) return;
-    const attempts = getSectionAttempts(this.studentName);
-    const done     = attempts[section];
-    const name1    = getFirstName(this.studentName);
-
-    if (done < 2 || unlockedSections.has(section)) {
-      this.startSession(section);
-    } else {
-      this.showPinModal(
-        `🔓 Unlock ${ACTIVITIES[section].short}`,
-        `${name1} has already used both tries for ${SECTION_LABELS[section]}. Enter Teacher PIN to allow an extra try.`,
-        () => { unlockedSections.add(section); this.startSession(section); }
-      );
-    }
+    this.startSession(section);   // no try limit on this site
   },
 
   /* ── TEACHER REVIEW MODE ── */
@@ -1992,19 +1980,16 @@ const app = {
     this.attemptStart(this.currentSection);
   },
 
-  // "Do This Activity Again" only shows while a try is left (a visitor always has one).
+  // "Do This Activity Again" always shows: no try limit on this site.
   _showAgainButton() {
     const btn  = document.getElementById('again-btn');
     const note = document.getElementById('again-note');
     if (!btn || !note) return;
-    const used = getSectionAttempts(this.studentName)[this.currentSection] || 0;
-    const left = SHARE_MODE || reviewMode ? 1 : Math.max(0, 2 - used);
-    btn.classList.toggle('hidden', left === 0);
+    btn.classList.remove('hidden');
     const sub = document.getElementById('again-sub');
-    if (sub) sub.textContent = SHARE_MODE || reviewMode ? 'Start this one over.'
-      : `Start this one over. You have ${left} ${left === 1 ? 'try' : 'tries'} left.`;
-    note.classList.toggle('hidden', left !== 0);
-    note.textContent = left === 0 ? '✅ You used both tries for this activity. Go back to your activities to pick another one.' : '';
+    if (sub) sub.textContent = 'Start this one over.';
+    note.classList.add('hidden');
+    note.textContent = '';
   },
 
   tryAgain() {
