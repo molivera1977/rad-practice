@@ -263,10 +263,10 @@ window.RAD_ACTIVITIES = [
       ]}
     ],
     items: [
-      { id: 'T01', skill: 'Restating with key words', q: 'What are the key words in this question?', ask: 'What is your favorite color?',
-        choices: ['favorite color', 'What is', 'is your', 'your'],
-        why: 'The key words tell what the question is about: favorite color.',
-        model: { R: 'My favorite color is', A: 'purple.', D: 'My room has purple walls and a purple rug.' } },
+      { id: 'T01', skill: 'Restating with key words', q: 'What are the key words in this question?', ask: 'What is your favorite TV show?',
+        choices: ['favorite TV show', 'What is', 'is your', 'your'],
+        why: 'The key words tell what the question is about: favorite TV show.',
+        model: { R: 'My favorite TV show is', A: 'a show about animals in the ocean.', D: 'Every week, the show visits a different sea animal.' } },
       { id: 'T02', skill: 'Restating with key words', q: 'Which is the best way to start the answer?', ask: 'Why do you like music class?',
         choices: ['I like music class because…', 'Because…', 'Why do I like music class?', 'Music.'],
         kinds: ['good', 'because', 'copy', 'oneword'],
@@ -533,7 +533,7 @@ window.RAD_ACTIVITIES = [
         { p: 'When a question is about a story, your detail comes from the story too.' },
         { ask: 'What news did Ms. Rivera tell her class?' },
         { rad: { R: 'Ms. Rivera told her class that', A: 'the class was going to get a class pet.', D: 'First, the students had to vote on which animal to choose.', para: 1 } },
-        { p: 'You will read a story called The Big Snow Day. The story stays on the screen. Look back at the story for every answer.' }
+        { p: 'Next, you will read a story. The story stays on the screen. Look back at the story for every answer.' }
       ]}
     ],
     groups: [

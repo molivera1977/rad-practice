@@ -213,10 +213,31 @@ function missText(q) {
   return t;
 }
 
-function sectionBank(section) {
+/* ── VERSIONS (Marcos 10/19: a retry gets new questions) ──
+   data/rad.js is version 1; data/rad-versions.js holds versions 2-4. Try 1 on this
+   device = version 1, try 2 = version 2 … try 5 = version 1 again. Every version has
+   the same ids, skills and kinds of question, so the dashboard compares them slot by
+   slot; the version rides in the start event (v). Look Back has a story per version. */
+function versionCount(section) {
+  const act = ACTIVITIES[section];
+  return act ? 1 + ((window.RAD_VERSIONS || {})[act.kind] || []).length : 1;
+}
+function versionData(section, version) {
+  const act = ACTIVITIES[section];
+  const more = (window.RAD_VERSIONS || {})[act.kind] || [];
+  const v = version > 1 && more[version - 2];
+  return v ? Object.assign({}, act.data, v, { story: v.story || null })
+           : Object.assign({}, act.data, { story: act.data.usesStory ? window.RAD_STORY : null });
+}
+/* The version a try gets: the next one after the tries finished on this device */
+function versionForTry(section, triesDone) {
+  return (triesDone % versionCount(section)) + 1;
+}
+
+function sectionBank(section, version) {
   const act = ACTIVITIES[section];
   if (!act) return [];
-  const d = act.data;
+  const d = versionData(section, version || 1);
   if (d.groups) {
     const out = [];
     d.groups.forEach((g, gi) => {
@@ -945,12 +966,18 @@ const app = {
     const mode = prompt('Choose review mode:\n1 — Manual (you tap Next each question)\n2 — Auto-run (fully automatic)\n\nEnter 1 or 2:');
     if (mode !== '1' && mode !== '2') { alert('Invalid choice.'); reviewMode = false; return; }
     reviewAutoRun = (mode === '2');
+    const count = versionCount(map[section]);
+    const ver = count > 1 ? prompt(`Which version? Each try gets the next one.\nEnter 1 to ${count}:`, '1') : '1';
+    const n = Number(ver);
+    if (!(n >= 1 && n <= count)) { alert('Invalid choice.'); reviewMode = false; return; }
+    this._reviewVersion = n;
     this.startSession(map[section]);
   },
 
   exitReviewMode() {
     reviewMode    = false;
     reviewAutoRun = false;
+    this._reviewVersion = null;
     this.stopTimerEngine();
     const banner = document.getElementById('review-mode-banner');
     if (banner) banner.classList.add('hidden');
@@ -999,8 +1026,11 @@ const app = {
     this.timerSeconds   = 0;
     this.currentAttemptNum = reviewMode ? 1 : getSectionAttempts(this.studentName)[section] + 1;
     this.sessionBase = SESSION_ID;
+    // Try 1 → version 1, try 2 → version 2 … (the teacher's look picks one)
+    this.version = reviewMode && this._reviewVersion ? this._reviewVersion
+      : versionForTry(section, this.currentAttemptNum - 1);
 
-    const rawBank = [...sectionBank(section)];
+    const rawBank = [...sectionBank(section, this.version)];
 
     // Each choice keeps its own note when the choices are shuffled. Fixed sets
     // (R / A / D, "what is missing") keep their order.
@@ -1019,7 +1049,7 @@ const app = {
     this.cardsSeen = [];
 
     this._enterQuiz();
-    logEvent('start');
+    logEvent('start', { v: this.version });
     this.startTimer();
     this.renderQuestion();
   },
@@ -1072,6 +1102,7 @@ const app = {
     this.questionLocked = false;
     tabSwitchCount      = saved.tabSwitches || 0;
     this.cardsSeen = saved.cardsSeen || [];
+    this.version = saved.version || 1;           // the saved questions are already that version's
     this.events = saved.events || [];
     this.startedAt = saved.startedAt || new Date().toISOString();
     this.finishedAt = '';
@@ -1099,6 +1130,7 @@ const app = {
       sessionBase:     this.sessionBase,
       tabSwitches:     tabSwitchCount,
       cardsSeen: this.cardsSeen || [],
+      version: this.version || 1,
       events: this.events,
       startedAt: this.startedAt
     }));
@@ -1520,8 +1552,8 @@ const app = {
     const panel = document.getElementById('story-panel');
     if (!panel) return;
     const act = ACTIVITIES[this.currentSection];
-    if (!act.data.usesStory || !window.RAD_STORY) { panel.innerHTML = ''; return; }
-    const st = window.RAD_STORY;
+    const st = act.data.usesStory ? versionData(this.currentSection, this.version || 1).story : null;
+    if (!st) { panel.innerHTML = ''; return; }
     panel.innerHTML = `
       <div class="story-panel-header">📖 ${escapeHtml(st.title)}</div>
       <div class="story-scroll" id="story-scroll">
