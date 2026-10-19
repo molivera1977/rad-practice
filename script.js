@@ -444,15 +444,60 @@ function allSectionsCompletedOnce(name) {
 /* No try limit (Marcos 10/16: "remove the 2 tries limit") — this is a site for
    learning, so any activity can be done again as many times as a student wants.
    Every try is still its own row (Attempt 1, 2, 3 …), so nothing is overwritten. */
+/* ── THE GATES (Marcos 10/19: "each level should be gated until the previous one has a
+   score of 70 or higher. Once they are all unlocked then they can be done unlimitedly.") ──
+   Activity 1 is always open. Each later activity opens when the one before it has a
+   finished try at 70% or better (the BEST try counts, so a later lower score never
+   closes it again). An activity the student already finished before the gates came
+   stays open. Scores are remembered on the device, like Math Module 2. The Teacher PIN
+   lets one student past a gate. The share link and Teacher Access have no gates. */
+const PASS_PCT = 70;
+function bestScore(name, section) {
+  const scores = JSON.parse(localStorage.getItem(SCORES_KEY) || '[]');
+  return scores.filter(s => s.name === name && s.section === section && s.done && s.total > 0)
+    .reduce((best, s) => (!best || s.score / s.total > best.score / best.total ? s : best), null);
+}
+function passed(name, section) {
+  const best = bestScore(name, section);
+  return !!best && best.score / best.total * 100 >= PASS_PCT;
+}
+/* How many right it takes: 70% of 9 questions = 7 */
+function needFor(section) {
+  return Math.ceil(PASS_PCT / 100 * sectionBank(section).length);
+}
+function prevActivity(section) {
+  const keys = Object.keys(ACTIVITIES);
+  const i = keys.indexOf(section);
+  return i > 0 ? ACTIVITIES[keys[i - 1]] : null;
+}
+function nextActivity(section) {
+  const keys = Object.keys(ACTIVITIES);
+  const i = keys.indexOf(section);
+  return i >= 0 && i + 1 < keys.length ? ACTIVITIES[keys[i + 1]] : null;
+}
+/* Why this activity is not open for this student yet ('' = it is open) */
+function gateWait(name, section) {
+  if (SHARE_MODE || reviewMode) return '';
+  const prev = prevActivity(section);
+  if (!prev) return '';
+  if (getSectionAttempts(name)[section] > 0) return '';   // finished before the gates came: stays open
+  if (passed(name, prev.key)) return '';
+  return `Get ${needFor(prev.key)} of ${sectionBank(prev.key).length} on ${prev.short} first`;
+}
+
 function applyLocks(name) {
-  const attempts = getSectionAttempts(name);
   Object.values(ACTIVITIES).forEach(act => {
     const btn = document.getElementById(`btn-${act.key}`);
     if (!btn) return;
-    const done = attempts[act.key];
     const sub  = btn.querySelector('.form-btn-sub');
-    btn.classList.remove('locked');
-    sub.textContent = done === 0 ? act.sub : `✅ Done ${done === 1 ? 'once' : done + ' times'} · do it again anytime`;
+    const why  = gateWait(name, act.key);
+    const best = bestScore(name, act.key);
+    // A gated button looks locked but can still be tapped, so it can say why (and take the Teacher PIN)
+    btn.classList.toggle('locked', !!why);
+    if (why)       sub.textContent = `🔒 ${why}`;
+    else if (!best) sub.textContent = act.sub;
+    else if (passed(name, act.key)) sub.textContent = `✅ Best: ${best.score} of ${best.total} · do it again anytime`;
+    else sub.textContent = `🔁 Best: ${best.score} of ${best.total} · get ${needFor(act.key)} to open the next one`;
   });
 }
 
@@ -866,7 +911,19 @@ const app = {
   /* ── ATTEMPT START ── */
   attemptStart(section) {
     if (!this.studentName) return;
-    this.startSession(section);   // no try limit on this site
+    // The gates (see PASS_PCT): no try limit, but an activity waits for 70% on the one before it.
+    // The Teacher PIN lets this one student past.
+    const why = gateWait(this.studentName, section);
+    if (why) {
+      this.showPinModal(
+        '🔒 Not Yet',
+        `${getFirstName(this.studentName)}: ${why.charAt(0).toLowerCase() + why.slice(1)}. ` +
+        `Teachers: enter your PIN to let this student start ${ACTIVITIES[section].short} now.`,
+        () => this.startSession(section)
+      );
+      return;
+    }
+    this.startSession(section);
   },
 
   /* ── TEACHER REVIEW MODE ── */
@@ -1982,6 +2039,7 @@ const app = {
   },
 
   // "Do This Activity Again" always shows: no try limit on this site.
+  // "Do This Activity Again" always shows (no try limit). The note under it says whether the next activity is open.
   _showAgainButton() {
     const btn  = document.getElementById('again-btn');
     const note = document.getElementById('again-note');
@@ -1989,8 +2047,17 @@ const app = {
     btn.classList.remove('hidden');
     const sub = document.getElementById('again-sub');
     if (sub) sub.textContent = 'Start this one over.';
-    note.classList.add('hidden');
-    note.textContent = '';
+    const next = nextActivity(this.currentSection);
+    const total = this.currentBank.length;
+    const thisTry = total ? this.score / total * 100 >= PASS_PCT : false;
+    let text = '';
+    if (SHARE_MODE || reviewMode) text = '';
+    else if (!next) text = thisTry ? '🏆 You finished all 8 activities! Do any of them again anytime.' : '';
+    else if (passed(this.studentName, this.currentSection))
+      text = thisTry ? `🔓 You got ${needFor(this.currentSection)} or more right. ${next.short} is open!` : `✅ ${next.short} is already open.`;
+    else text = `Get ${needFor(this.currentSection)} of ${total} right to open ${next.short}. Do this activity again to try!`;
+    note.classList.toggle('hidden', !text);
+    note.textContent = text;
   },
 
   tryAgain() {
