@@ -467,11 +467,14 @@ function allSectionsCompletedOnce(name) {
    Every try is still its own row (Attempt 1, 2, 3 …), so nothing is overwritten. */
 /* ── THE GATES (Marcos 10/19: "each level should be gated until the previous one has a
    score of 70 or higher. Once they are all unlocked then they can be done unlimitedly.") ──
-   Activity 1 is always open. Each later activity opens when the one before it has a
-   finished try at 70% or better (the BEST try counts, so a later lower score never
-   closes it again). An activity the student already finished before the gates came
-   stays open. Scores are remembered on the device, like Math Module 2. The Teacher PIN
-   lets one student past a gate. The share link and Teacher Access have no gates. */
+   Activity 1 is always open. Each later activity opens only when EVERY activity before
+   it has a finished try at 70% or better (the BEST try counts, so a later lower score
+   never closes anything again). Marcos 10/19 ("yes, switch it on"): this applies to
+   activities already finished too — a student who skipped ahead before the gates came
+   is locked back to the first activity they have not passed; once they pass it, later
+   activities they already scored 70%+ on open again right away. Scores are remembered on
+   the device, like Math Module 2. The Teacher PIN lets one student past a gate. The
+   share link and Teacher Access have no gates. */
 const PASS_PCT = 70;
 function bestScore(name, section) {
   const scores = JSON.parse(localStorage.getItem(SCORES_KEY) || '[]');
@@ -496,14 +499,17 @@ function nextActivity(section) {
   const i = keys.indexOf(section);
   return i >= 0 && i + 1 < keys.length ? ACTIVITIES[keys[i + 1]] : null;
 }
-/* Why this activity is not open for this student yet ('' = it is open) */
+/* Why this activity is not open for this student yet ('' = it is open):
+   names the FIRST activity before it that has not reached 70% */
 function gateWait(name, section) {
   if (SHARE_MODE || reviewMode) return '';
-  const prev = prevActivity(section);
-  if (!prev) return '';
-  if (getSectionAttempts(name)[section] > 0) return '';   // finished before the gates came: stays open
-  if (passed(name, prev.key)) return '';
-  return `Get ${needFor(prev.key)} of ${sectionBank(prev.key).length} on ${prev.short} first`;
+  const keys = Object.keys(ACTIVITIES);
+  const at = keys.indexOf(section);
+  for (let i = 0; i < at; i++) {
+    const k = keys[i];
+    if (!passed(name, k)) return `Get ${needFor(k)} of ${sectionBank(k).length} on ${ACTIVITIES[k].short} first`;
+  }
+  return '';
 }
 
 function applyLocks(name) {
@@ -2085,8 +2091,9 @@ const app = {
     let text = '';
     if (SHARE_MODE || reviewMode) text = '';
     else if (!next) text = thisTry ? '🏆 You finished all 8 activities! Do any of them again anytime.' : '';
-    else if (passed(this.studentName, this.currentSection))
+    else if (!gateWait(this.studentName, next.key))
       text = thisTry ? `🔓 You got ${needFor(this.currentSection)} or more right. ${next.short} is open!` : `✅ ${next.short} is already open.`;
+    else if (passed(this.studentName, this.currentSection)) text = `✅ You passed this one. ${gateWait(this.studentName, next.key)} to open ${next.short}.`;
     else text = `Get ${needFor(this.currentSection)} of ${total} right to open ${next.short}. Do this activity again to try!`;
     note.classList.toggle('hidden', !text);
     note.textContent = text;
