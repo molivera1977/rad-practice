@@ -899,3 +899,42 @@ button.answer-btn.rp-part-btn { display: flex; align-items: center; gap: 12px; f
 .again-note { text-align:center; color:#555; font-size:1rem; margin:10px 0 0; }
 .signout-sub { display:block; font-size:0.8rem; font-weight:600; color:#888; margin-top:2px; }
 
+
+/* ═══════════════════════════════════════════════════════
+   SLIDE MODE (Teacher Access, Marcos 10/19): the activity as big slides for the board.
+   Each slide is drawn as big as fits the screen (script.js _fitSlide, zoom 0.95–1.35×); 1× on a phone.
+═══════════════════════════════════════════════════════ */
+body.slides-active .container { max-width: 1240px; margin: 0.6rem auto; padding: 1rem 1.6rem 0.4rem; }
+body.slides-active .container > h1, body.slides-active .container > .welcome-sub { display: none; }   /* the slide gets the room */
+.sl-bar { display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; background: #fff3cd; border: 2px solid #ffc107;
+          border-radius: 12px; padding: 8px 14px; margin-bottom: 14px; color: #856404; font-weight: 700; }
+.sl-title { flex: 1 1 auto; font-size: 1.05rem; }
+.sl-count { font-size: 1rem; white-space: nowrap; }
+#sl-jump { font-family: inherit; font-size: 0.95rem; padding: 5px 8px; border-radius: 8px; border: 1px solid #d4b106;
+           background: #fff; color: #5c4703; max-width: 300px; min-width: 0; }
+.sl-exit { background: none; border: 1px solid #ffc107; border-radius: 8px; padding: 5px 12px; font: inherit; font-weight: 700;
+           color: #856404; cursor: pointer; }
+.sl-h { font-size: 1.6rem; color: var(--primary); margin: 4px 0 10px; }
+.sl-where { display: inline-block; background: #eef3ff; color: var(--primary); font-weight: 700; font-size: 0.95rem;
+            border-radius: 999px; padding: 3px 14px; margin: 0 0 6px; }
+.sl-qblock .rp-say { font-size: 1.45rem; font-weight: 700; line-height: 1.5; color: #1a2a44; }
+.sl-choices { display: grid; gap: 10px; margin: 8px 0 4px; }
+.sl-choice-row { display: flex; align-items: center; gap: 10px; }
+.sl-choice-row .rp-speak { background: #fff; flex-shrink: 0; }
+.sl-choice { flex: 1 1 auto; min-width: 0; background: #fff; border: 3px solid #c5d5f5; border-radius: 14px; padding: 10px 16px;
+             font-family: var(--font-read); font-size: 1.25rem; line-height: 1.45; color: #1a2a44; }
+.sl-choice.sl-right { border-color: var(--a); background: var(--a-bg); font-weight: 700; box-shadow: 0 0 0 3px var(--a); }
+.sl-answer { margin-top: 12px; background: #f4fbf6; border: 2px solid var(--a); border-radius: 14px; padding: 4px 12px;
+             scroll-margin-bottom: 90px; }   /* clear of the Back / Next bar */
+.sl-with-story { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 18px; align-items: start; }
+.sl-with-story .sl-story .story-scroll { overflow-y: auto; }   /* the story scrolls in its own column (height set by _fitSlide) */
+.sl-story .story-scroll { max-height: none; }
+.sl-nav { position: sticky; bottom: 0; display: flex; justify-content: space-between; gap: 12px; padding: 12px 0 4px;
+          background: linear-gradient(rgba(255,255,255,0), #fff 30%); margin-top: 10px; }
+.sl-nav .action-btn { min-width: 150px; font-size: 1.15rem; }
+.sl-nav .action-btn:disabled { opacity: 0.45; cursor: default; }
+@media (max-width: 700px) {
+  .sl-with-story { display: block; }
+  .sl-nav .action-btn { min-width: 0; flex: 1 1 0; }
+  #sl-jump { max-width: 100%; flex: 1 1 100%; }
+}

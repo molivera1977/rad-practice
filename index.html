@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=rp3-open" />
+  <link rel="stylesheet" href="style.css?v=rp7-slides" />
 </head>
 <body>
 <canvas id="confetti-canvas"></canvas>
@@ -298,6 +298,24 @@
   </div>
 
   <!-- ══════════════════════════════════════════
+       SLIDE MODE (Teacher Access, Marcos 10/19): big slides for the board.
+       Filled in by script.js (app.openSlides); nothing is saved or sent.
+  ══════════════════════════════════════════ -->
+  <div id="slide-screen" class="hidden">
+    <div class="sl-bar">
+      <span class="sl-title" id="sl-title">🖥️ Slide Mode</span>
+      <span class="sl-count" id="sl-count"></span>
+      <select id="sl-jump" aria-label="Jump to a slide" onchange="app.slideGo(Number(this.value)); this.blur();"></select>
+      <button type="button" class="sl-exit" onclick="app.exitSlides()">✕ Exit</button>
+    </div>
+    <div class="sl-body" id="sl-body"></div>
+    <div class="sl-nav">
+      <button type="button" class="action-btn sl-back" id="sl-back" onclick="app.slideBack()">◀ Back</button>
+      <button type="button" class="action-btn sl-next" id="sl-next" onclick="app.slideNext()">Next ▶</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
        END SCREEN
   ══════════════════════════════════════════ -->
   <div id="end-screen" class="hidden">
@@ -381,6 +399,6 @@
 <script src="share.js?v=3"></script>
 <script src="data/rad.js?v=rp6-versions"></script>
 <script src="data/rad-versions.js?v=rp6-versions"></script>
-<script src="script.js?v=rp7-strict"></script>
+<script src="script.js?v=rp8-slides"></script>
 </body>
 </html>
