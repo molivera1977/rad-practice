@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=rp7-slides" />
+  <link rel="stylesheet" href="style.css?v=rp9-flow" />
 </head>
 <body>
 <canvas id="confetti-canvas"></canvas>
@@ -90,13 +90,24 @@
       <!-- STEP 2 — CHOOSE A SECTION -->
       <div id="section-select" class="hidden">
         <div class="step-card">
-          <span class="step-label">Step 2 — Choose an Activity</span>
-          <div id="activity-menu"></div>
+          <span class="step-label">Step 2 — Tap Continue</span>
+          <button class="start-btn fl-continue" id="continue-btn" onclick="app.continueFlow()">▶ Continue: <span class="fl-continue-what"></span><span class="form-btn-sub">Your next activity is ready.</span></button>
+          <p id="all-done-note" class="again-note hidden">🏆 You finished all 8 activities! You can do any one again.</p>
+          <!-- Your path: the 8 activities, done / you are here / later (filled in by script.js) -->
+          <div id="fl-path" class="fl-path"></div>
+          <div class="fl-redo-row">
+            <button type="button" class="fl-redo-btn" id="redo-toggle" aria-expanded="false" aria-controls="redo-list" onclick="app.toggleRedo()">🔁 Do an activity again</button>
+          </div>
+          <div id="redo-list" class="hidden">
+            <p class="fl-menu-note">Pick any open activity to do again:</p>
+            <div id="activity-menu"></div>
+          </div>
         </div>
         <div style="background:#f0f4ff;border:2px solid #a9c4f5;border-radius:12px;
                      padding:12px 16px;margin-bottom:12px;font-size:0.88rem;color:#2c3e50;line-height:1.6;">
-          📋 <strong>Rules:</strong> Do the activities in order, 1 to 8. Get <strong>7 out of 10</strong> right
-          on an activity to open the next one. You can do any open activity again <strong>as many times as you want</strong>.
+          📋 <strong>Rules:</strong> Tap <strong>▶ Continue</strong>. It takes you through the activities in order, 1 to 8.
+          Your path shows where you are. Get <strong>7 out of 10</strong> right to move on.
+          You can do any open activity again <strong>as many times as you want</strong>.
         </div>
         <div style="text-align:center;margin-bottom:8px;">
           <button class="score-btn" onclick="app.showScores()">📊 View Score History</button>
@@ -166,9 +177,9 @@
     <div class="dir-section form-dir">
       <div class="dir-row">
         <button class="speak-btn" onclick="speakDir(this)">🔊</button>
-        <h3 style="margin:0;">📚 Step 2 — Pick an Activity</h3>
+        <h3 style="margin:0;">📚 Step 2 — Tap Continue</h3>
       </div>
-      <p class="dir-text">There are 8 activities. Do them in order, 1 to 8. Your teacher will tell you which activity to do today.</p>
+      <p class="dir-text">After you sign in, tap the big Continue button. It starts your next activity. There are 8 activities, and you do them in order, 1 to 8.</p>
     </div>
 
     <div class="dir-section story-dir">
@@ -328,8 +339,9 @@
       <div id="missed-items"></div>
     </div>
     <div class="end-btns">
-      <button class="start-btn" onclick="app.backToMenu()">📋 Back to My Activities<span class="form-btn-sub">Pick another activity. You stay signed in.</span></button>
-      <button class="start-btn" id="again-btn" style="background:#27ae60;box-shadow:0 5px 0 #1e8449;" onclick="app.doAgain()">🔄 Do This Activity Again<span class="form-btn-sub" id="again-sub">Start this one over.</span></button>
+      <button class="start-btn hidden" id="next-step-btn" style="background:#8e44ad;box-shadow:0 5px 0 #6c3483;" onclick="app.goNext()">▶ Next: <span class="fl-next-what"></span><span class="form-btn-sub" id="next-sub"></span></button>
+      <button class="start-btn" id="again-btn" style="background:#27ae60;box-shadow:0 5px 0 #1e8449;" onclick="app.doAgain()"><span class="again-what">🔄 Do This Activity Again</span><span class="form-btn-sub" id="again-sub">Start this one over.</span></button>
+      <button class="start-btn" onclick="app.backToMenu()">📋 Back to My Activities<span class="form-btn-sub">Pick any open activity. You stay signed in.</span></button>
     </div>
     <p id="again-note" class="again-note hidden"></p>
     <div style="text-align:center;margin-top:14px;">
@@ -400,6 +412,6 @@
 <script src="form-label.js?v=1"></script>
 <script src="data/rad.js?v=rp6-versions"></script>
 <script src="data/rad-versions.js?v=rp6-versions"></script>
-<script src="script.js?v=rp8-slides-fl1"></script>
+<script src="script.js?v=rp9-flow"></script>
 </body>
 </html>

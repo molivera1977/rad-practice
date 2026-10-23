@@ -512,10 +512,50 @@ function gateWait(name, section) {
   return '';
 }
 
+/* ── THE FLOW AND YOUR PATH (Marcos 10/22, from Inference Practice: "those last few changes should
+   be done to RAD" → "All of today's menu changes") ──
+   A student's next step is the first activity, in order, not passed yet (70%). The menu shows a big
+   pulsing ▶ Continue to it and "Your path": the 8 activities (✅ done · ▶ you are here · ○ later)
+   with how many are done. The activity buttons fold away behind "🔁 Do an activity again". The end
+   screen's ▶ Next goes to the next step after a pass. The gates are unchanged. */
+function nextStep(name) {
+  return Object.keys(ACTIVITIES).find(k => !passed(name, k)) || null;
+}
+function pathHTML(name) {
+  const st = nextStep(name);
+  const keys = Object.keys(ACTIVITIES);
+  const done = keys.filter(k => passed(name, k)).length;
+  const rows = keys.map((k, i) => {
+    const ok = passed(name, k);
+    const here = st === k;
+    const cls = ok ? 'done' : here ? 'here' : 'later';
+    const mark = ok ? '✅' : here ? '▶' : '○';   // ○ = later in the path
+    return `<li class="fl-path-row fl-path-${cls}"><span class="fl-path-mark" aria-hidden="true">${mark}</span>` +
+      `<span class="fl-path-num" aria-hidden="true">${i + 1}</span><span class="fl-path-name">${escapeHtml(ACTIVITIES[k].short)}</span>` +
+      (here ? '<span class="fl-here-tag">← you are here</span>' : '') + `</li>`;
+  }).join('');
+  const say = st
+    ? `Your path. You are on ${ACTIVITIES[st].short}. ${done} of ${keys.length} activities are done. Get 7 out of 10 right to move on.`
+    : `Your path. You finished all ${keys.length} activities!`;
+  return sayBlockHTML('fl-path-say', escapeHtml(say).replace(/^Your path\./, '<strong>Your path.</strong>')) +
+    `<p class="fl-path-head">${done} of ${keys.length} done</p><ol class="fl-path-list">${rows}</ol>`;
+}
+
 function applyLocks(name) {
+  const st = nextStep(name);
+  const cont = document.getElementById('continue-btn');
+  if (cont) {
+    cont.classList.toggle('hidden', !st);
+    if (st) cont.querySelector('.fl-continue-what').textContent = ACTIVITIES[st].short;
+    const allDone = document.getElementById('all-done-note');
+    if (allDone) allDone.classList.toggle('hidden', !!st);
+  }
+  const path = document.getElementById('fl-path');
+  if (path) path.innerHTML = pathHTML(name);
   Object.values(ACTIVITIES).forEach(act => {
     const btn = document.getElementById(`btn-${act.key}`);
     if (!btn) return;
+    btn.classList.toggle('is-next', st === act.key);   // the next step's button pulses (in the list)
     const sub  = btn.querySelector('.form-btn-sub');
     const why  = gateWait(name, act.key);
     const best = bestScore(name, act.key);
@@ -946,6 +986,31 @@ const app = {
       const rmBtn = document.getElementById('review-mode-btn');
       if (rmBtn) rmBtn.classList.toggle('hidden', displayName !== 'Mr. O (Teacher)');
     }
+  },
+
+  // "🔁 Do an activity again" opens (and closes) the activity buttons
+  toggleRedo(open) {
+    const list = document.getElementById('redo-list');
+    const btn = document.getElementById('redo-toggle');
+    if (!list || !btn) return;
+    const show = open == null ? list.classList.contains('hidden') : !!open;
+    list.classList.toggle('hidden', !show);
+    btn.setAttribute('aria-expanded', String(show));
+    btn.textContent = show ? '✖ Hide the list' : '🔁 Do an activity again';
+  },
+
+  // ▶ Continue: the student's next step (the first activity not passed yet)
+  continueFlow() {
+    if (!this.studentName) return;
+    const st = nextStep(this.studentName);
+    if (st) this.attemptStart(st);
+  },
+
+  // ▶ Next on the end screen
+  goNext() {
+    stopConfetti();
+    if (!this.studentName || !this._nextStep) { this.restart(); return; }
+    this.attemptStart(this._nextStep);
   },
 
   /* ── ATTEMPT START ── */
@@ -2044,7 +2109,9 @@ const app = {
 
     if (pct >= 80) startConfetti(pct);
 
-    if (!reviewMode && !SHARE_MODE && allSectionsCompletedOnce(this.studentName)) {
+    // No automatic Score History (Marcos 10/22, with the flow): it opened 3 s after an end screen once
+    // every activity was done and covered whatever the student started from ▶ Next. The button stays.
+    if (false && !reviewMode && !SHARE_MODE && allSectionsCompletedOnce(this.studentName)) {
       setTimeout(() => this.showScores(true), 3000);
     }
   },
@@ -2275,31 +2342,51 @@ const app = {
     this.attemptStart(this.currentSection);
   },
 
-  // "Do This Activity Again" always shows: no try limit on this site.
-  // "Do This Activity Again" always shows (no try limit). The note under it says whether the next activity is open.
+  // The end screen's main button takes the student on: ▶ Next (the next step) after a pass,
+  // 🔄 Try Again while this activity is still the next step. Marcos 10/22: "let's get rid of this
+  // option if the student has passed. There's no reason for it if they passed." Back to My Activities stays.
   _showAgainButton() {
     const btn  = document.getElementById('again-btn');
+    const next = document.getElementById('next-step-btn');
     const note = document.getElementById('again-note');
     if (!btn || !note) return;
-    btn.classList.remove('hidden');
-    const sub = document.getElementById('again-sub');
-    if (sub) sub.textContent = 'Start this one over.';
-    const next = nextActivity(this.currentSection);
+    const cur = this.currentSection;
     const total = this.currentBank.length;
     const thisTry = total ? this.score / total * 100 >= PASS_PCT : false;
+    const need = needFor(cur);
+    // The share link and Teacher Access save no scores: they follow the order from this activity
+    const after = nextActivity(cur);
+    const st = SHARE_MODE || reviewMode ? (thisTry ? (after ? after.key : null) : cur) : nextStep(this.studentName);
+    const same = st === cur;
+    this._nextStep = st && !same ? st : null;
+    if (next) {
+      next.classList.toggle('hidden', !this._nextStep || reviewMode);
+      if (this._nextStep) {
+        next.querySelector('.fl-next-what').textContent = ACTIVITIES[this._nextStep].short;
+        const sub = document.getElementById('next-sub');
+        if (sub) sub.textContent = ACTIVITIES[this._nextStep].sub;
+      }
+    }
+    const passedHere = SHARE_MODE || reviewMode ? thisTry : passed(this.studentName, cur);
+    btn.classList.toggle('hidden', passedHere);
+    btn.querySelector('.again-what').textContent = same ? '🔄 Try Again' : '🔄 Do This Activity Again';
+    const sub = document.getElementById('again-sub');
+    if (sub) sub.textContent = same ? `Get ${need} of ${total} right to move on.` : 'Start this one over.';
     let text = '';
-    if (SHARE_MODE || reviewMode) text = '';
-    else if (!next) text = thisTry ? '🏆 You finished all 8 activities! Do any of them again anytime.' : '';
-    else if (!gateWait(this.studentName, next.key))
-      text = thisTry ? `🔓 You got ${needFor(this.currentSection)} or more right. ${next.short} is open!` : `✅ ${next.short} is already open.`;
-    else if (passed(this.studentName, this.currentSection)) text = `✅ You passed this one. ${gateWait(this.studentName, next.key)} to open ${next.short}.`;
-    else text = `Get ${needFor(this.currentSection)} of ${total} right to open ${next.short}. Do this activity again to try!`;
+    if (reviewMode) text = '';
+    else if (!st) text = '🏆 You finished all 8 activities! Do any of them again anytime.';
+    else if (same) text = `Get ${need} of ${total} right to move on. Tap Try Again. You can do it!`;
+    else if (thisTry) text = `🔓 You got ${need} or more right! Next up: ${ACTIVITIES[st].short}.`;
+    else text = `Next up: ${ACTIVITIES[st].short}.`;
     note.classList.toggle('hidden', !text);
     note.textContent = text;
+    const first = this._nextStep && !reviewMode ? next : btn;
+    if (first && first.parentElement && first.parentElement.firstElementChild !== first) first.parentElement.prepend(first);
   },
 
   tryAgain() {
     stopConfetti();
+    this.toggleRedo(false);   // back to the path, the list folded away
     this.timerSeconds = 0;
     this.show('start-screen');
     document.getElementById('welcome-panel').classList.add('hidden');

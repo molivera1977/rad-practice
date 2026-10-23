@@ -938,3 +938,47 @@ body.slides-active .container > h1, body.slides-active .container > .welcome-sub
   .sl-nav .action-btn { min-width: 0; flex: 1 1 0; }
   #sl-jump { max-width: 100%; flex: 1 1 100%; }
 }
+
+
+/* ═══════════════════════════════════════════════════════
+   THE FLOW AND YOUR PATH (Marcos 10/22, same as Inference Practice): a big pulsing ▶ Continue,
+   "Your path" (✅ done · ▶ you are here · ○ later), the activity buttons behind "🔁 Do an activity
+   again", ▶ Next on the end screen. The next step pulses gently; reduce-motion gets a steady ring.
+═══════════════════════════════════════════════════════ */
+.fl-continue { width: 100%; background: #8e44ad; box-shadow: 0 5px 0 #6c3483; margin-bottom: 10px; font-size: 1.25rem; }
+.fl-continue:hover { box-shadow: 0 8px 0 #6c3483; }
+.fl-continue-what { display: block; font-size: 1.55em; line-height: 1.25; margin: 6px 0 4px; letter-spacing: 0.2px; }
+.fl-next-what     { display: block; font-size: 1.35em; line-height: 1.25; margin: 4px 0; }
+#next-step-btn.hidden, #continue-btn.hidden, #redo-list.hidden { display: none !important; }
+.fl-path { margin: 4px 0 6px; }
+.fl-path .fl-path-say { background: #f7f3fb; border: 2px solid #d9c3ea; border-radius: 12px; padding: 10px 14px; }
+.fl-path-head { margin: 8px 0 6px; font-weight: 800; font-size: 1.1rem; color: var(--primary-dark); }
+.fl-path-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.fl-path-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 12px; border: 2px solid #e2e6e5;
+               font-family: var(--font-read); font-size: 1.15rem; background: #fff; }
+.fl-path-mark { width: 1.6em; text-align: center; font-size: 1.15rem; }
+.fl-path-num { min-width: 1.8em; height: 1.8em; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+               background: #eef1f0; color: #333; font-weight: 800; font-size: 0.95rem; }
+.fl-path-done { background: #f1faf4; border-color: #b6e2c3; }
+li.fl-path-here { background: #f7f3fb; border-color: #8e44ad; border-width: 3px; }
+.fl-here-tag { margin-left: auto; font-weight: 800; color: #6c3483; font-size: 1rem; }
+.fl-path-later { color: #555; }
+.fl-path-later .fl-path-mark { color: #9aa5a3; font-size: 1.3rem; }
+.fl-redo-row { text-align: center; margin: 14px 0 4px; }
+.fl-redo-btn { font-family: var(--font-ui); font-size: 1.05rem; font-weight: 700; padding: 9px 18px; border-radius: 12px;
+               border: 2px solid var(--primary); background: #fff; color: var(--primary); cursor: pointer; }
+.fl-menu-note { margin: 12px 0 8px; font-size: 1.05rem; color: #333; }
+@keyframes fl-pulse {
+  0%, 100% { box-shadow: 0 5px 0 #6c3483, 0 0 0 0 rgba(142, 68, 173, 0.55); }
+  50%      { box-shadow: 0 5px 0 #6c3483, 0 0 0 12px rgba(142, 68, 173, 0); }
+}
+@keyframes fl-pulse-act {
+  0%, 100% { box-shadow: 0 5px 0 rgba(0, 0, 0, 0.25), 0 0 0 0 rgba(142, 68, 173, 0.55); }
+  50%      { box-shadow: 0 5px 0 rgba(0, 0, 0, 0.25), 0 0 0 10px rgba(142, 68, 173, 0); }
+}
+#continue-btn, #next-step-btn { animation: fl-pulse 2s ease-in-out infinite; }
+.rp-act.is-next { animation: fl-pulse-act 2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  #continue-btn, #next-step-btn { animation: none; box-shadow: 0 5px 0 #6c3483, 0 0 0 4px rgba(142, 68, 173, 0.45); }
+  .rp-act.is-next { animation: none; box-shadow: 0 5px 0 rgba(0, 0, 0, 0.25), 0 0 0 4px rgba(142, 68, 173, 0.45); }
+}
