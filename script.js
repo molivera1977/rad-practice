@@ -2051,7 +2051,10 @@ const app = {
 
     const scores   = JSON.parse(localStorage.getItem(SCORES_KEY) || '[]');
     const attemptNum = this.currentAttemptNum || 1;
-    if (!reviewMode && !SHARE_MODE) {   // a visitor's score is never saved, so no attempt lock ever starts
+    // A GUEST'S VISIT ACTS LIKE A STUDENT'S (Marcos 10/25: "what about RAD and Inference" — the Lab's guest fix): a guest's tries are kept too, so "Your path",
+    // ▶ Continue and a retry's new version move on. share.js keeps them under share_ keys and wipes them on the next visit;
+    // nothing is sent. There is no try limit here, so nothing locks.
+    if (!reviewMode) {
       scores.push({
         name:    this.studentName,
         section: this.currentSection,
@@ -2083,7 +2086,7 @@ const app = {
     if (reviewNextBtn) reviewNextBtn.classList.toggle('hidden', !reviewMode);
 
     document.getElementById('final-score-sub').textContent = SHARE_MODE
-      ? `${SECTION_LABELS[this.currentSection]} · Guest view — this score was not saved`
+      ? `${SECTION_LABELS[this.currentSection]} · Guest view — kept for this visit only, not sent to Mr. O`
       : `${SECTION_LABELS[this.currentSection]} · Attempt ${attemptNum} · ${this.studentName}`;
     document.getElementById('final-msg').textContent = msg;
 
@@ -2354,9 +2357,9 @@ const app = {
     const total = this.currentBank.length;
     const thisTry = total ? this.score / total * 100 >= PASS_PCT : false;
     const need = needFor(cur);
-    // The share link and Teacher Access save no scores: they follow the order from this activity
+    // Teacher Access saves no scores: it follows the order from this activity (a guest's tries are kept, so a guest goes by them)
     const after = nextActivity(cur);
-    const st = SHARE_MODE || reviewMode ? (thisTry ? (after ? after.key : null) : cur) : nextStep(this.studentName);
+    const st = reviewMode ? (thisTry ? (after ? after.key : null) : cur) : nextStep(this.studentName);
     const same = st === cur;
     this._nextStep = st && !same ? st : null;
     if (next) {
@@ -2367,7 +2370,7 @@ const app = {
         if (sub) sub.textContent = ACTIVITIES[this._nextStep].sub;
       }
     }
-    const passedHere = SHARE_MODE || reviewMode ? thisTry : passed(this.studentName, cur);
+    const passedHere = reviewMode ? thisTry : passed(this.studentName, cur);
     btn.classList.toggle('hidden', passedHere);
     btn.querySelector('.again-what').textContent = same ? '🔄 Try Again' : '🔄 Do This Activity Again';
     const sub = document.getElementById('again-sub');
