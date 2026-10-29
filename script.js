@@ -595,7 +595,7 @@ function speakDir(btn) {
 
   const speechText = spans.map(s => s.textContent).join(' ');
   const u = new SpeechSynthesisUtterance(speechText);
-  u.lang = 'en-US';
+  english(u);
   u.rate = READ_RATE;
 
   u.onboundary = e => {
@@ -633,7 +633,7 @@ function speakEl(btn, el) {
   activeSpeakBtn = btn;
   btn.textContent = '⏹';
   const u = new SpeechSynthesisUtterance(spokenOf(spans));
-  u.lang = 'en-US';
+  english(u);
   u.rate = READ_RATE;
   u.onboundary = e => {
     if (e.name !== 'word') return;
@@ -689,6 +689,29 @@ function sayBlockHTML(kind, inner, label) {
    (app.show) cancels the speech. */
 const INTRO_SAY = { '🔊': 'the speaker button', '⏹': 'the stop button', '—': ',' };
 const READ_RATE = 0.82;    // every read-aloud a student taps (Marcos 10/26: "I like the 0.82. It's clear and easy to listen to.")
+/* The pause between one line and the next — QPS's lesson pause (qps-literacy-hub/practice.js PAUSE.line = 900 ms),
+   as on Parts of Speech HQ. Marcos 10/28: "the speed still sounds faster than on QPS" — same voice, same 0.82, but
+   lines 0.25 s apart ran together. */
+const LINE_PAUSE_MS = 900;
+/* THE SAME VOICE AS QPS (Marcos 10/28, on Parts of Speech HQ: "why can't this site talk like QPS" · "the reading
+   speed also sounds different on QPS"; after the fix: "i like the sound and pacing of the read aloud"): every reading
+   asks for English and uses the device's own default English voice, picked the way the QPS Literacy Hub picks it
+   (qps-literacy-hub/readaloud.js). Asking only for "en-US" let the browser choose a different voice, which sounds
+   different at the same 0.82. A device that lists no voices yet still gets English. */
+let _enVoice = null;
+function englishVoice() {
+  if (_enVoice) return _enVoice;
+  const all = (window.speechSynthesis && speechSynthesis.getVoices && speechSynthesis.getVoices()) || [];
+  const isEn = v => /^en([-_]|$)/i.test((v && v.lang) || ''), us = v => /^en[-_]US$/i.test(v.lang || '');
+  _enVoice = all.find(v => v.default && isEn(v)) || all.find(v => us(v) && v.localService) || all.find(us) || all.find(isEn) || null;
+  return _enVoice;                         // null until the device lists its voices (Chrome lists them late): asked again next time
+}
+function english(u) {
+  u.lang = 'en-US';
+  const v = englishVoice();
+  if (v) { try { u.voice = v; } catch (e) { /* a voice the browser won't take: en-US still asks for English */ } }
+  return u;
+}
 const INTRO_RATE = 0.82;   // Marcos 10/6: 0.92 ran ahead of the highlight
 let introToken = 0, introTimer = null;
 let introMsPerChar = null, introMsPerWord = null;   // learned from this device's voice
@@ -759,7 +782,7 @@ function speakReadAloudIntro() {
       introTimer = setTimeout(tick, 60);
     };
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'en-US'; u.rate = rate;
+    english(u); u.rate = rate;
     u.onstart = () => { startedAt = lastHeard = Date.now(); mark(0); clearTimeout(introTimer); tick(); };
     u.onboundary = e => {
       if (e.name !== 'word') return;
@@ -1666,6 +1689,8 @@ const app = {
     const btn = document.getElementById('lc-speak');
     const box = document.getElementById('learn-card');
     if (!btn || !box) return;
+    // a stopped reading may still have its next line waiting out the pause: it must not come in on top of this one
+    clearTimeout(this._cardPause);
     if (activeSpeakBtn === btn) { stopActiveSpeech(); return; }
     stopActiveSpeech();
     const lines = Array.from(box.querySelectorAll('.rp-say')).map(blockSpans).filter(s => s.length);
@@ -1678,7 +1703,7 @@ const app = {
       let text = spokenOf(spans);
       if (!/[.!?:,]["”’]?$/.test(text)) text += '.';
       const u = new SpeechSynthesisUtterance(text);
-      u.lang = 'en-US'; u.rate = 0.82;
+      english(u); u.rate = 0.82;
       u.onboundary = e => {
         if (e.name !== 'word') return;
         box.querySelectorAll('.wrd.hl').forEach(el => el.classList.remove('hl'));
@@ -1686,7 +1711,7 @@ const app = {
       };
       u.onend = () => {
         box.querySelectorAll('.wrd.hl').forEach(el => el.classList.remove('hl'));
-        this._cardPause = setTimeout(() => sayLine(k + 1), 250);
+        this._cardPause = setTimeout(() => sayLine(k + 1), LINE_PAUSE_MS);
       };
       addHighlightFallback(u, spans);
       window.speechSynthesis.speak(u);
@@ -1933,7 +1958,7 @@ const app = {
       job.abort = () => finish(false);
       btn.classList.add('playing'); btn.textContent = '🔊 Listening…';
       const u = new SpeechSynthesisUtterance(text);
-      u.lang = 'en-US'; u.rate = READ_RATE;
+      english(u); u.rate = READ_RATE;
       u.onstart = () => {
         job.started = true;
         // Some voices never report that they finished. Generous on purpose (about 80 words a minute),
@@ -2136,7 +2161,7 @@ const app = {
     const qtText  = qtSpans.map(s => s.textContent).join(' ').replace(/_+/g, 'blank');
 
     const u = new SpeechSynthesisUtterance(qtText);
-    u.lang = 'en-US';
+    english(u);
     u.rate = READ_RATE;
     u.onboundary = e => {
       if (e.name !== 'word') return;
