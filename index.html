@@ -341,7 +341,7 @@
     <div class="end-btns">
       <button class="start-btn hidden" id="next-step-btn" style="background:#8e44ad;box-shadow:0 5px 0 #6c3483;" onclick="app.goNext()">▶ Next: <span class="fl-next-what"></span><span class="form-btn-sub" id="next-sub"></span></button>
       <button class="start-btn" id="again-btn" style="background:#27ae60;box-shadow:0 5px 0 #1e8449;" onclick="app.doAgain()"><span class="again-what">🔄 Do This Activity Again</span><span class="form-btn-sub" id="again-sub">Start this one over.</span></button>
-      <button class="start-btn" onclick="app.backToMenu()">📋 Back to My Activities<span class="form-btn-sub">Pick any open activity. You stay signed in.</span></button>
+      <button class="start-btn" onclick="app.backToMenu()">📋 Back to My Menu<span class="form-btn-sub">Pick any open activity. You stay signed in.</span></button>
     </div>
     <p id="again-note" class="again-note hidden"></p>
     <div style="text-align:center;margin-top:14px;">
@@ -380,7 +380,7 @@
       </div>
     </div>
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px;">
-      <button class="action-btn" style="background:#7f8c8d;box-shadow:0 4px 0 #566573;" onclick="app.backToMenu()">📋 Back to My Activities</button>
+      <button class="action-btn" style="background:#7f8c8d;box-shadow:0 4px 0 #566573;" onclick="app.backToMenu()">📋 Back to My Menu</button>
     </div>
     <div id="teacher-score-btns" style="display:none;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px;">
       <button class="action-btn" style="background:#c0392b;box-shadow:0 4px 0 #922b21;" onclick="app.clearScores()">🗑️ Clear History</button>
@@ -410,6 +410,7 @@
 
 <script src="share.js?v=3"></script>
 <script src="form-label.js?v=1"></script>
+<script src="next-waits.js?v=1" data-hold='#next-btn, #lc-next'></script>
 <script src="data/rad.js?v=rp6-versions"></script>
 <script src="data/rad-versions.js?v=rp6-versions"></script>
 <script src="script.js?v=rp11-guest-r82-keys1-follow1-dir15-voice1"></script>
