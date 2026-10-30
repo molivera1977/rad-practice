@@ -653,6 +653,35 @@ function speakBlock(btn) {
 }
 const SPEAK_HTML = '<button type="button" class="speak-btn rp-speak" onclick="speakBlock(this)" title="Read this aloud" aria-label="Read this aloud">🔊</button>';
 
+/* ── A READING STOPPED EARLY SAYS WHAT TO DO NEXT ──────
+   Marcos 10/30 ("Yes, read it aloud"): when a lesson card is stopped before the end, the line that says what to do
+   gets its own 🔊 and reads itself as soon as nothing else is reading (a line the student tapped finishes first),
+   and the 🔊 that reads the whole card pulses until it is tapped. The voice skips the icons, so the line says
+   "the 🔊 speaker". */
+let stoppedNoteTimer = null;
+let readAloudHushed = false;   // the student left (hushReadAloud): a note shown after that is not read aloud
+function sayStoppedNote(note, text, speaker) {
+  if (!note || note.classList.contains('lc-stopped')) return;   // already saying it for this stop
+  clearTimeout(stoppedNoteTimer);
+  note.classList.add('lc-stopped');
+  note.innerHTML = `${SPEAK_HTML}<span class="rp-say">${text}</span>`;
+  if (speaker) speaker.classList.add('lc-pulse');
+  let tries = 0;
+  const say = () => {
+    if (!note.isConnected || !note.classList.contains('lc-stopped') || (speaker && activeSpeakBtn === speaker)) return;
+    if (readAloudHushed || document.hidden || !note.getClientRects().length) return;   // the student left: say nothing
+    if (activeSpeakBtn || window.speechSynthesis.speaking) { if (++tries < 100) stoppedNoteTimer = setTimeout(say, 300); return; }
+    speakBlock(note.querySelector('.rp-speak'));
+  };
+  stoppedNoteTimer = setTimeout(say, 300);
+}
+function clearStoppedNote(speaker, note) {
+  clearTimeout(stoppedNoteTimer);
+  readAloudHushed = false;   // a reading the student started
+  if (speaker) speaker.classList.remove('lc-pulse');
+  if (note) note.classList.remove('lc-stopped');
+}
+
 /* ── R.A.D. PICTURES ─────────────────────────────────
    An answer in the color check: each part underlined in its color, with its
    letter on the left (shown, not read). `mark` puts a yellow box around one
@@ -1667,10 +1696,16 @@ const app = {
     this._cardLast = last;
     this.saveProgress();
     if (reviewMode) { this._openCardNext(); if (reviewAutoRun) setTimeout(() => this.nextCard(), 500); return; }
-    // The button opens when the voice finishes the card. A device that never says
-    // so (or has no voice) gets it after a wait long enough to read the card.
+    // The button opens when the voice finishes the card. Only a device with NO voice (nothing started within
+    // 4 s) gets it after a wait long enough to read the card: the reading-time timer used to run even while the
+    // voice was still reading, and opened Next before the card was heard (Marcos 10/30: "RAD practice i saw
+    // allowed it"; Parts of Speech HQ's fix of 10/28).
     const words = Array.from(box.querySelectorAll('.rp-say')).reduce((n, el) => n + el.textContent.split(/\s+/).filter(w => /[A-Za-z0-9]/.test(w)).length, 0);
-    this._cardUnlock = setTimeout(() => this._openCardNext(), Math.min(40000, Math.max(10000, words * 450)));
+    this._cardVoiceStarted = false;
+    this._cardUnlock = setTimeout(() => {
+      if (this._cardVoiceStarted) return;
+      this._cardUnlock = setTimeout(() => this._openCardNext(), Math.max(0, Math.min(40000, Math.max(10000, words * 450)) - LISTEN_START_WAIT));
+    }, LISTEN_START_WAIT);
     this._cardSpeak = setTimeout(() => this.speakCard(), 250);
   },
 
@@ -1680,8 +1715,15 @@ const app = {
     if (!btn || !btn.disabled) return;
     btn.disabled = false;
     btn.textContent = this._cardLast ? 'Start practicing ➡️' : 'Next card ➡️';
+    clearStoppedNote(document.getElementById('lc-speak'));
     const note = document.getElementById('lc-note');
-    if (note) note.textContent = '✅ You can go on.';
+    if (note) { note.classList.remove('lc-stopped'); note.textContent = '✅ You can go on.'; }
+  },
+
+  /* Stopped before the end (⏹, or another 🔊): Next stays shut, and the note says what to do — read aloud (10/30) */
+  _cardStoppedEarly() {
+    const next = document.getElementById('lc-next');
+    if (next && next.disabled) sayStoppedNote(document.getElementById('lc-note'), '👆 Tap the 🔊 speaker at the top to hear the whole card. Then the Next button opens.', document.getElementById('lc-speak'));
   },
 
   /* Reads the whole card, one block at a time, lighting each word */
@@ -1691,19 +1733,22 @@ const app = {
     if (!btn || !box) return;
     // a stopped reading may still have its next line waiting out the pause: it must not come in on top of this one
     clearTimeout(this._cardPause);
-    if (activeSpeakBtn === btn) { stopActiveSpeech(); return; }
+    if (activeSpeakBtn === btn) { stopActiveSpeech(); this._cardStoppedEarly(); return; }
     stopActiveSpeech();
-    const lines = Array.from(box.querySelectorAll('.rp-say')).map(blockSpans).filter(s => s.length);
+    // the card's own lines (not the note under it)
+    const lines = Array.from(box.querySelectorAll('.rp-say')).filter(el => !el.closest('.lc-note')).map(blockSpans).filter(s => s.length);
     if (!lines.length) { this._openCardNext(); return; }
     activeSpeakBtn = btn; btn.textContent = '⏹';
+    clearStoppedNote(btn, document.getElementById('lc-note'));
     const sayLine = k => {
-      if (activeSpeakBtn !== btn) return;
+      if (activeSpeakBtn !== btn) { this._cardStoppedEarly(); return; }   // stopped before the end: Next stays shut until the whole card is heard
       if (k >= lines.length) { btn.textContent = '🔊'; activeSpeakBtn = null; this._openCardNext(); return; }
       const spans = lines[k];
       let text = spokenOf(spans);
       if (!/[.!?:,]["”’]?$/.test(text)) text += '.';
       const u = new SpeechSynthesisUtterance(text);
       english(u); u.rate = 0.82;
+      u.onstart = () => { this._cardVoiceStarted = true; };
       u.onboundary = e => {
         if (e.name !== 'word') return;
         box.querySelectorAll('.wrd.hl').forEach(el => el.classList.remove('hl'));
@@ -2499,7 +2544,7 @@ window.addEventListener('resize', () => {
    Listen — for good, not just the line being said (the card used to go on to its next line). */
 function hushReadAloud() {
   introToken++; clearTimeout(introTimer);
-  clearTimeout(app._cardSpeak); clearTimeout(app._cardPause);
+  clearTimeout(app._cardSpeak); clearTimeout(app._cardPause); clearTimeout(stoppedNoteTimer); readAloudHushed = true;
   stopActiveSpeech();
 }
 window.addEventListener('pagehide', hushReadAloud);

@@ -982,3 +982,14 @@ li.fl-path-here { background: #f7f3fb; border-color: #8e44ad; border-width: 3px;
   #continue-btn, #next-step-btn { animation: none; box-shadow: 0 5px 0 #6c3483, 0 0 0 4px rgba(142, 68, 173, 0.45); }
   .rp-act.is-next { animation: none; box-shadow: 0 5px 0 rgba(0, 0, 0, 0.25), 0 0 0 4px rgba(142, 68, 173, 0.45); }
 }
+
+/* A reading stopped early (Marcos 10/30): the line saying what to do has its own 🔊, and the 🔊 to tap pulses */
+.lc-stopped .rp-speak { margin-right: 8px; vertical-align: middle; }
+@keyframes lc-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(142, 68, 173, 0.55); }
+  50%      { box-shadow: 0 0 0 12px rgba(142, 68, 173, 0); }
+}
+.speak-btn.lc-pulse { animation: lc-pulse 2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .speak-btn.lc-pulse { animation: none; box-shadow: 0 0 0 4px rgba(142, 68, 173, 0.45); }
+}
