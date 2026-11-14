@@ -33,7 +33,7 @@
         </div>
         <div class="welcome-hero-text">
           <p>See great R.A.D. answers, find their three parts, and build your own by picking. No writing today!</p>
-          <button class="lgs-btn" onclick="app.showReadAloudIntro()">🚀 Let's Get Started!</button>
+          <button class="lgs-btn" data-guest-start onclick="app.showReadAloudIntro()">🚀 Let's Get Started!</button>
         </div>
       </div>
       <div style="text-align:right;margin-top:10px;">
@@ -335,7 +335,7 @@
     <p class="t-picked" id="t-picked"></p>
     <div class="t-actions">
       <button type="button" class="t-act" id="t-try" onclick="app.teacherTry()">👀 Try it as a student<span>You answer, like a student: the lesson cards, then this version's questions. ⏩ Skip the wait opens anything that is shut. Nothing is saved.</span></button>
-      <button type="button" class="t-act" id="t-slides" onclick="app.teacherSlides()">🖥️ Slide Mode<span>The lesson, big, for your desk or the board: this activity's lesson cards (the same on every version). Never the questions.</span></button>
+      <button type="button" class="t-act" id="t-slides" data-guest-slides onclick="app.teacherSlides()">🖥️ Slide Mode<span>The lesson, big, for your desk or the board: this activity's lesson cards (the same on every version). Never the questions.</span></button>
       <button type="button" class="t-act" id="t-key" onclick="app.teacherKey()">✅ Answer key<span>Every question of this version, the right answer marked, why, and the note under each wrong choice. You can print it.</span></button>
     </div>
   </div>
@@ -462,12 +462,12 @@
   <button type="button" id="teach-back" onclick="app.backToTeacher()">← Teacher screen</button>
 </div>
 
-<script src="share.js?v=4"></script>
+<script src="share.js?v=5"></script>
 <script src="form-label.js?v=1"></script>
 <script src="next-waits.js?v=2" data-hold='#next-btn, #lc-next'></script>
 <script src="data/rad.js?v=rp6-versions"></script>
 <script src="data/rad-versions.js?v=rp6-versions"></script>
 <script src="spot-sync.js?v=3"></script>
-<script src="script.js?v=rp12-teach1-roster24-rec1"></script>
+<script src="script.js?v=rp12-teach1-roster24-rec1-guest1"></script>
 </body>
 </html>
