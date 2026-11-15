@@ -2170,7 +2170,9 @@ const app = {
     const note = correct ? '' : (q.notes && q.notes[pickIdx]) || '';
     const fbText = correct
       ? `✅ <strong>Correct!</strong> ${escapeHtml(q.why || '')}`
-      : `❌ <strong>Not quite.</strong> ${note ? escapeHtml(note) + ' ' : ''}The best answer is: <strong>${escapeHtml(choiceSaid(rightText).replace(/[.!?…]+$/, ''))}</strong>. ${escapeHtml(q.why || '')}`;
+      : `❌ <strong>Not quite.</strong> ${note ? escapeHtml(note) + ' ' : ''}The best answer is: <strong>${escapeHtml(choiceSaid(rightText).replace(/[.!?…]+$/, ''))}.</strong> ${escapeHtml(q.why || '')}`;
+    // (the stop inside the bold answer: a stop after the tag is a word of its own, which the voice skips (spokenOf),
+    //  so the answer ran into the why with no pause; Ava, 11/15 — as on Inference Practice)
     const fb = document.getElementById('feedback');
     fb.className = 'feedback-box ' + (correct ? 'correct' : 'incorrect');
     fb.style.display = 'block';
